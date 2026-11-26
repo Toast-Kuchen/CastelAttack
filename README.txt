@@ -23,5 +23,5 @@ UPDATES
   z. B. 'ca2-v2'. Die App zeigt dann „Update installieren“.
 
 STEUERUNG
-  Finger aufs Spielfeld halten = zielen & feuern, +🏹/−🏹 Bogenschützen, Öl / Mangonel / Stämme, ❚❚ Pause.
+  Finger aufs Spielfeld halten = Schussrichtung & feuern, +🏹/−🏹 Bogenschützen, Öl / Mangonel / Stämme, ❚❚ Pause.
   Tastatur: Pfeiltasten, Leertaste, A/D, 1/2/3, P.

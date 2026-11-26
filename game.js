@@ -1,6 +1,6 @@
 'use strict';
 const C=CFG,$=id=>document.getElementById(id),cv=$('c'),g=cv.getContext('2d'),R=Math.random,PI=Math.PI;
-const W=960,H=540,GY=440,KX0=40,KX1=160,WX0=180,WX1=270,SWV='ca2-v2';
+const W=960,H=540,GY=440,KX0=40,KX1=160,WX0=180,WX1=270,SWV='ca2-v3';
 // Drei Mauerabschnitte, Index 0 = vorderster (niedrigster), nach hinten höher
 const SEG=[{x0:236,x1:270,top:GY-76},{x0:208,x1:236,top:GY-102},{x0:180,x1:208,top:GY-128}];
 const sv=Object.assign({hi:0,best:1,kills:0,music:1,sfx:1,q:2,lvl:1,score:0,rk:0},(()=>{try{return JSON.parse(localStorage.getItem('ca2'))||{}}catch(e){return{}}})());
@@ -39,9 +39,9 @@ function update(dt){const s=S;s.t+=dt;s.shake=Math.max(0,s.shake-dt);
  s.build=Math.min(100,s.build+(C.workers-s.arch)*C.buildRate(s.l)*dt);
  while(s.q.length&&s.q[0].t<=s.t)spawn(s.q.shift().type);
  if(!s.q.length&&s.en.filter(e=>e.hp>0).length<2)s.q=waves(s.l,s.t);
- for(let i=0;i<s.arch;i++){const o=apos(s,i);s.ga[i]=s.aim?aimAng(o.x,o.y-16,s.aim):s.ang;s.cd[i]-=dt;if(s.fire&&s.cd[i]<=0){s.cd[i]=C.arrow.cd*(.9+R()*.2);shoot(i)}}
+ for(let i=0;i<s.arch;i++){const o=apos(s,i);s.ga[i]=s.ang;s.cd[i]-=dt;if(s.fire&&s.cd[i]<=0){s.cd[i]=C.arrow.cd*(.9+R()*.2);shoot(i)}}
  for(const a of s.ar){if(a.stuck){a.life-=dt;continue}a.vy+=C.arrow.g*dt;a.x+=a.vx*dt;a.y+=a.vy*dt;
-  for(const e of s.en)if(e.hp>0&&Math.abs(a.x-e.x)<e.w/2&&a.y>GY-e.h&&a.y<GY){s.hits++;hurt(e,C.arrow.dmg);a.life=0;break}
+  for(const e of s.en)if(e.hp>0&&Math.abs(a.x-e.x)<e.w/2&&a.y>GY-e.h&&a.y<GY){s.hits++;hurt(e,C.arrow.dmg);for(const o of s.en)if(o!==e&&o.hp>0&&Math.abs(o.x-a.x)<o.w/2+C.arrow.splashR)hurt(o,C.arrow.dmg*C.arrow.splashMul);a.life=0;break}
   if(a.life>0&&a.y>=GY){a.y=GY;a.stuck=1;a.life=2;puff(a.x,GY,'#7a6040',2)}else if(a.x>W+50)a.life=0}
  s.ar=s.ar.filter(a=>a.life>0);
  for(const e of s.en){e.flash-=dt;if(e.hp<=0){e.dead+=dt;continue}e.ph+=dt*e.spd*.15;
@@ -91,7 +91,7 @@ const cnt={};
 function hud(s){g.fillStyle='rgba(20,12,6,.72)';g.fillRect(0,0,W,34);g.font='bold 15px Georgia,serif';g.textBaseline='middle';g.fillStyle='#f3e2b3';
  g.fillText('Level '+s.l,10,17);g.fillText('Punkte '+s.score,82,17);bar(225,'Bau',s.build/100,'#d9a84a');bar(370,'Mauer',s.wall/s.wallMax,'#9ab');bar(530,'Burgherr',s.lord/C.lordHp,'#c44');
  g.fillStyle='#f3e2b3';g.fillText(`Schützen ${s.arch}  Bauer ${C.workers-s.arch}  Winkel ${Math.round(s.ga[0])}°`,712,17);
- if(s.aim){const m=s.aim;g.strokeStyle=s.fire?'#ff6a3a':'rgba(255,240,180,.7)';g.lineWidth=2;g.beginPath();g.arc(m.x,m.y,10,0,7);g.moveTo(m.x-16,m.y);g.lineTo(m.x+16,m.y);g.moveTo(m.x,m.y-16);g.lineTo(m.x,m.y+16);g.stroke();g.lineWidth=1}
+ {const o=apos(s,0),a=s.ang*PI/180,y=o.y-16;g.strokeStyle=s.fire?'#ff6a3a':'rgba(255,240,180,.6)';g.lineWidth=2;g.setLineDash([6,5]);g.beginPath();g.moveTo(o.x,y);g.lineTo(o.x+Math.cos(a)*110,y-Math.sin(a)*110);g.stroke();g.setLineDash([]);g.lineWidth=1}
  for(const k in s.sp)if(cnt[k]!==s.sp[k]){cnt[k]=s.sp[k];$('n-'+k).textContent=s.sp[k]}}
 function draw(){const s=S||DEMO;if(!S)DEMO.t+=.016;if(!bg)bg=mkBg();g.setTransform(1,0,0,1,0,0);g.drawImage(bg,0,0);g.setTransform(cv.width/W,0,0,cv.height/H,0,0);
  if(s.shake>0)g.translate((R()-.5)*20*s.shake,0);drawKeep(s);drawWall(s);for(const e of s.en)drawEnemy(e);
@@ -114,7 +114,7 @@ function lose(){const s=S;mode='end';s.fire=false;sv.hi=Math.max(sv.hi,s.score);
 function pause(){if(mode!=='play')return;mode='pause';S.fire=false;save();panel('<h2>Pause</h2>',[['Fortsetzen',()=>{$('ov').hidden=true;mode='play'}],['Level neu starten',()=>start(S.l,S.s0,S.k0)],['Hauptmenü',menu]])}
 function menu(){mode='menu';S=null;$('ctl').hidden=true;const b=[['Spiel starten',()=>start(1,0,0)]];if(sv.lvl>1)b.push([`Fortsetzen (Level ${sv.lvl})`,()=>start(sv.lvl,sv.score,sv.rk)]);
  panel(`<h1>Castle Attack 2<small>Remake – Verteidige den Bergfried</small></h1><p class="st" id="off">${offTxt}</p>`,b.concat([['Anleitung',help],['Einstellungen',settings],['Highscore',scores]]))}
-function help(){panel(`<h2>Anleitung</h2><ul><li>Deine ${C.workers} Arbeiter bauen den Bergfried. Ist er fertig, ist das Level gewonnen.</li><li><b>+🏹/−🏹</b>: bis zu ${C.maxArchers} Arbeiter werden Bogenschützen – bessere Abwehr, aber langsamerer Bau.</li><li><b>Finger aufs Spielfeld halten</b>: Die Schützen berechnen die Flugbahn zu dieser Stelle und schießen Salven, auch steil nach unten direkt vor die Mauer. Ziehen verschiebt das Ziel, Loslassen stoppt.</li><li>Die Mauer hat drei nach hinten höher werdende Abschnitte. Sie fallen von vorn nach hinten, die Schützen weichen dann auf den nächsten Abschnitt aus.</li><li><b>Öl</b> trifft alles direkt vor dem Tor, der <b>Mangonel</b> wirft einen Stein mit Flächenschaden auf die vorderste Gruppe, <b>Stämme</b> rollen brennend durch alle Gegner. Jeder Einsatz kostet Punkte.</li><li>Fällt die Mauer, stürmen die Gegner zum Burgherrn. Stirbt er, ist das Spiel verloren.</li></ul>`,[['Zurück',menu]])}
+function help(){panel(`<h2>Anleitung</h2><ul><li>Deine ${C.workers} Arbeiter bauen den Bergfried. Ist er fertig, ist das Level gewonnen.</li><li><b>+🏹/−🏹</b>: bis zu ${C.maxArchers} Arbeiter werden Bogenschützen – bessere Abwehr, aber langsamerer Bau.</li><li><b>Finger aufs Spielfeld halten</b>: Die Richtung vom Schützen zu deinem Finger ist die Abschussrichtung (gestrichelte Linie). Die Pfeile fallen im Flug ab, also musst du für weite Ziele höher halten. Auch steil nach unten vor die Mauer ist möglich. Ziehen ändert die Richtung, Loslassen stoppt. Ein Pfeil verletzt auch Gegner, die direkt daneben stehen.</li><li>Die Mauer hat drei nach hinten höher werdende Abschnitte. Sie fallen von vorn nach hinten, die Schützen weichen dann auf den nächsten Abschnitt aus.</li><li><b>Öl</b> trifft alles direkt vor dem Tor, der <b>Mangonel</b> wirft einen Stein mit Flächenschaden auf die vorderste Gruppe, <b>Stämme</b> rollen brennend durch alle Gegner. Jeder Einsatz kostet Punkte.</li><li>Fällt die Mauer, stürmen die Gegner zum Burgherrn. Stirbt er, ist das Spiel verloren.</li></ul>`,[['Zurück',menu]])}
 function settings(){const on=v=>v?'an':'aus';panel(`<h2>Einstellungen</h2>`,[[`Musik: ${on(sv.music)}`,()=>{sv.music^=1;save();settings()}],[`Soundeffekte: ${on(sv.sfx)}`,()=>{sv.sfx^=1;save();settings()}],[`Grafik: ${sv.q>1?'hoch':'sparsam'}`,()=>{sv.q=sv.q>1?1:2;save();resize();settings()}],['Zurück',menu]])}
 function scores(){panel(`<h2>Highscore</h2><table>${row('Höchste Punktzahl',sv.hi)}${row('Höchstes Level',sv.best)}${row('Besiegte Gegner gesamt',sv.kills)}</table>`,[['Zurück',menu]])}
 
@@ -135,9 +135,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('resize',resize);
 // Direktes Zielen per Touch/Maus auf dem Spielfeld
 function toGame(e){const b=cv.getBoundingClientRect();return{x:(e.clientX-b.left)/b.width*W,y:Math.min(GY-8,(e.clientY-b.top)/b.height*H)}}
+// Finger gibt nur die Schussrichtung vor (Winkel vom Schützen zum Finger) – die Schwerkraft muss der Spieler selbst einplanen.
+function setDir(e){const p=toGame(e),o=apos(S,0),a=Math.atan2(o.y-16-p.y,Math.max(1,p.x-o.x))*180/PI;S.ang=Math.round(Math.max(C.arrow.minAng,Math.min(C.arrow.maxAng,a)))}
 let aimId=null;const stopAim=e=>{if(e.pointerId===aimId){aimId=null;if(S)S.fire=false}};
-document.addEventListener('pointerdown',e=>{if(mode!=='play'||e.target.closest('button'))return;aimId=e.pointerId;S.aim=toGame(e);S.fire=true});
-document.addEventListener('pointermove',e=>{if(e.pointerId===aimId&&S)S.aim=toGame(e)});
+document.addEventListener('pointerdown',e=>{if(mode!=='play'||e.target.closest('button'))return;aimId=e.pointerId;setDir(e);S.fire=true});
+document.addEventListener('pointermove',e=>{if(e.pointerId===aimId&&S)setDir(e)});
 document.addEventListener('pointerup',stopAim);document.addEventListener('pointercancel',stopAim);
 
 function setOff(t){offTxt=t;const el=$('off');if(el)el.textContent=t}
